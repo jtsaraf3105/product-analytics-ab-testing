@@ -1,0 +1,10 @@
+{
+  "name": "Product Analytics",
+  "dataColors": ["#2563EB", "#EA580C", "#64748B", "#16A34A", "#9333EA", "#0891B2", "#CA8A04"],
+  "background": "#FFFFFF",
+  "foreground": "#0F172A",
+  "tableAccent": "#2563EB",
+  "good": "#16A34A",
+  "bad": "#DC2626",
+  "neutral": "#64748B"
+}

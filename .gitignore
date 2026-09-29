@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
+# regenerate with `make data` (2-3 min, seeded)
+data/raw/
+data/processed/09_star_schema.csv
+# regenerate with `make model`
+powerbi/data/

@@ -1,0 +1,3 @@
+{
+  "verdict": "Control 2.53% \u2192 treatment 2.89%: relative lift <b>+14.0%</b> (95% CI +8.1% to +20.2%), p = 1.2e-06, n = 198,438 users after excluding 1 SRM day(s). Recommendation: <b>ship</b>, with a 5% post-launch holdout."
+}

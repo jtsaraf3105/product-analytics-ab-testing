@@ -1,0 +1,12 @@
+check_name,n
+total_events,4260772.0
+null_user_pseudo_id,0.0
+null_event_timestamp,0.0
+null_device_category,0.0
+duplicate_events_exact,996.0
+purchases,16000.0
+purchases_missing_revenue,0.0
+purchases_missing_transaction_id,0.0
+duplicate_transaction_ids,0.0
+revenue_outliers_gt_3x_p99,0.0
+distinct_users,534107.0

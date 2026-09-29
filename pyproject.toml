@@ -1,0 +1,24 @@
+[project]
+name = "product-analytics-ab-testing"
+version = "1.0.0"
+description = "Funnel, cohort, RFM and A/B-test analysis of GA4 e-commerce events: BigQuery SQL, Python stats, dashboard, stakeholder memo."
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["analytics", "simulate", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"analytics/build_dashboard.py" = ["E501"]  # embedded HTML/CSS template
+"simulate/generate_ga4.py" = ["E501"]      # ground-truth description strings

@@ -1,0 +1,18 @@
+name: CI
+on:
+  push: {branches: [main]}
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -r requirements.txt
+      - run: ruff check . && ruff format --check .
+      # stats unit tests + every SQL file transpiled and run on a small simulated dataset
+      - run: pytest -q
+      # full reproducibility check: regenerate the data and re-run the notebook end to end
+      - run: make data sql PY=python
+      - run: cd notebooks && jupytext --to ipynb ab_test.py -o /tmp/ab.ipynb -q && jupyter nbconvert --to notebook --execute /tmp/ab.ipynb --output /tmp/ab_out.ipynb

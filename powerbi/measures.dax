@@ -1,0 +1,77 @@
+// =====================================================================================
+// DAX measures for the Product Analytics report. Paste into a "_Measures" table in
+// Power BI Desktop (Modeling > New measure), one measure at a time.
+// Model: see MODEL.md. Fact tables: fact_user_day, fact_experiment. Date table: dim_date.
+// =====================================================================================
+
+// ---------- Core volume ----------
+Users = DISTINCTCOUNT ( fact_user_day[user_pseudo_id] )
+Sessions = SUM ( fact_user_day[sessions] )
+Orders = SUM ( fact_user_day[orders] )
+Revenue = SUM ( fact_user_day[revenue] )
+Purchasers =
+    CALCULATE ( DISTINCTCOUNT ( fact_user_day[user_pseudo_id] ), fact_user_day[orders] > 0 )
+
+// ---------- KPIs ----------
+AOV = DIVIDE ( [Revenue], [Orders] )
+Session Conversion % = DIVIDE ( [Orders], [Sessions] )
+User Conversion % = DIVIDE ( [Purchasers], [Users] )
+Revenue per User = DIVIDE ( [Revenue], [Users] )
+
+// DAU for the selected day; averaged over days when a range is selected.
+DAU = AVERAGEX ( VALUES ( dim_date[date] ), CALCULATE ( [Users] ) )
+
+// Trailing windows are evaluated at the last visible date (use with a date slicer / card).
+WAU =
+    VAR d = MAX ( dim_date[date] )
+    RETURN CALCULATE ( [Users], DATESINPERIOD ( dim_date[date], d, -7, DAY ) )
+MAU =
+    VAR d = MAX ( dim_date[date] )
+    RETURN CALCULATE ( [Users], DATESINPERIOD ( dim_date[date], d, -28, DAY ) )
+Stickiness DAU/MAU =
+    VAR d = MAX ( dim_date[date] )
+    RETURN DIVIDE ( CALCULATE ( [Users], dim_date[date] = d ), [MAU] )
+
+// ---------- Growth ----------
+Revenue PM = CALCULATE ( [Revenue], DATEADD ( dim_date[date], -1, MONTH ) )
+Revenue MoM % = DIVIDE ( [Revenue] - [Revenue PM], [Revenue PM] )
+Orders PM = CALCULATE ( [Orders], DATEADD ( dim_date[date], -1, MONTH ) )
+Orders MoM % = DIVIDE ( [Orders] - [Orders PM], [Orders PM] )
+
+// ---------- Funnel (user-level, within the filter context) ----------
+Funnel Viewed = CALCULATE ( [Users], fact_user_day[viewed_item] = 1 )
+Funnel Carted = CALCULATE ( [Users], fact_user_day[added_to_cart] = 1 )
+Funnel Checkout = CALCULATE ( [Users], fact_user_day[began_checkout] = 1 )
+Funnel Purchased = [Purchasers]
+Cart Rate % = DIVIDE ( [Funnel Carted], [Funnel Viewed] )
+Checkout Rate % = DIVIDE ( [Funnel Checkout], [Funnel Carted] )
+Checkout Completion % = DIVIDE ( [Funnel Purchased], [Funnel Checkout] )
+Checkout Drop-off % = 1 - [Checkout Completion %]
+
+// ---------- Retention (cohort heatmap: rows dim_user[cohort_week], columns Week N) ----------
+// Requires a calculated column on fact_user_day:
+//   Week N = DATEDIFF ( RELATED ( dim_user[cohort_week] ), fact_user_day[day], WEEK )
+Cohort Size =
+    CALCULATE ( DISTINCTCOUNT ( dim_user[user_pseudo_id] ), REMOVEFILTERS ( fact_user_day[Week N] ) )
+Retained Users = [Users]
+Retention % = DIVIDE ( [Retained Users], [Cohort Size] )
+
+// ---------- Experiment page (fact_experiment) ----------
+Exp Users = CALCULATE ( COUNTROWS ( fact_experiment ), fact_experiment[n_variants] = 1 )
+Exp Converters =
+    CALCULATE ( SUM ( fact_experiment[converted] ), fact_experiment[n_variants] = 1 )
+Exp Conversion % = DIVIDE ( [Exp Converters], [Exp Users] )
+Exp Conv Control = CALCULATE ( [Exp Conversion %], fact_experiment[variant] = "control" )
+Exp Conv Treatment = CALCULATE ( [Exp Conversion %], fact_experiment[variant] = "treatment" )
+Exp Relative Lift % = DIVIDE ( [Exp Conv Treatment], [Exp Conv Control] ) - 1
+Exp Treatment Share =
+    DIVIDE ( CALCULATE ( [Exp Users], fact_experiment[variant] = "treatment" ), [Exp Users] )
+// Two-proportion z statistic (pooled SE) — p-value comes from the notebook; this is for display.
+Exp Z =
+    VAR nc = CALCULATE ( [Exp Users], fact_experiment[variant] = "control" )
+    VAR nt = CALCULATE ( [Exp Users], fact_experiment[variant] = "treatment" )
+    VAR xc = CALCULATE ( [Exp Converters], fact_experiment[variant] = "control" )
+    VAR xt = CALCULATE ( [Exp Converters], fact_experiment[variant] = "treatment" )
+    VAR p = DIVIDE ( xc + xt, nc + nt )
+    VAR se = SQRT ( p * ( 1 - p ) * ( 1 / nc + 1 / nt ) )
+    RETURN DIVIDE ( DIVIDE ( xt, nt ) - DIVIDE ( xc, nc ), se )
